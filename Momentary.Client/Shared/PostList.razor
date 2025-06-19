@@ -1,0 +1,40 @@
+﻿@implements IDisposable
+@inject PostApplicationService PostService
+
+@if (posts == null)
+{
+    <p><em>読み込み中...</em></p>
+}
+else
+{
+    <div class="post-grid">
+        @foreach (var post in posts)
+        {
+            <div class="post-item">
+                <img src="data:image/jpeg;base64,@post.Photo.Base64Content" alt="投稿写真" />
+                <div class="post-info">
+                    <img class="author-avatar" src="@post.Author.PhotoUrl" alt="@post.Author.DisplayName" />
+                </div>
+            </div>
+        }
+    </div>
+}
+@code{
+    private List<Post>? posts;
+    protected override void OnInitialized()
+    {
+        PostService.PostsUpdated += OnPostsUpdated;
+    }
+
+    private void OnPostsUpdated(List<Post> updatedPosts)
+    {
+        posts = updatedPosts;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        PostService.PostsUpdated -= OnPostsUpdated;
+        PostService.Unsubscribe();
+    }
+}

@@ -1,0 +1,120 @@
+﻿@inject PostApplicationService PostService
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime JSRuntime
+
+@if (IsVisible)
+{
+    <div class="dialog-overlay" @onclick="Close">
+        <div class="dialog-content" @onclick:stopPropagation>
+            <h3>写真を投稿 (1KB以下)</h3>
+            <InputFile OnChange="HandleFileSelected" />
+            
+            @if(previewImageSrc != null)
+            {
+                <img src="@previewImageSrc" style="width:100px; height:100px; object-fit:cover; margin-top: 10px;" />
+            }
+            
+            @if (errorMessage != null) { <p class="error-message">@errorMessage</p> }
+
+            <div class="dialog-actions">
+                <button @onclick="SubmitPost" disabled="@isSubmitting">
+                    @if(isSubmitting) { <span>投稿中...</span> } else { <span>投稿</span> }
+                </button>
+                <button @onclick="Close">キャンセル</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    
+    private IBrowserFile? selectedFile;
+    private byte[]? compressedImageData;
+    private string? previewImageSrc;
+    private string? errorMessage;
+    private bool isSubmitting;
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        selectedFile = e.File;
+        errorMessage = null;
+        previewImageSrc = null;
+
+        if (selectedFile == null) return;
+        
+        try
+        {
+            // JSで画像を圧縮
+            using var fileStream = selectedFile.OpenReadStream(selectedFile.Size);
+            var streamRef = new DotNetStreamReference(stream: fileStream);
+            compressedImageData = await JSRuntime.InvokeAsync<byte[]>("imageUtils.compressImage", streamRef);
+
+            if (compressedImageData.Length > Photo.MAX_SIZE_IN_BYTES)
+            {
+                 errorMessage = $"圧縮後もサイズオーバーです: {compressedImageData.Length} bytes";
+                 compressedImageData = null;
+                 return;
+            }
+            
+            previewImageSrc = $"data:image/jpeg;base64,{Convert.ToBase64String(compressedImageData)}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"画像処理エラー: {ex.Message}";
+        }
+    }
+
+    private async Task SubmitPost()
+    {
+        if (compressedImageData == null || selectedFile == null)
+        {
+            errorMessage = "投稿できる画像がありません。";
+            return;
+        }
+
+        isSubmitting = true;
+        errorMessage = null;
+
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity == null || !user.Identity.IsAuthenticated)
+            {
+                errorMessage = "ログインしていません。";
+                return;
+            }
+
+            var command = new CreatePostCommand(
+                user.FindFirst(ClaimTypes.NameIdentifier)!.Value,
+                user.Identity.Name!,
+                user.FindFirst("photoUrl")!.Value,
+                compressedImageData,
+                selectedFile.LastModified.UtcDateTime
+            );
+
+            await PostService.CreatePostAsync(command);
+            await Close();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"投稿エラー: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private Task Close()
+    {
+        IsVisible = false;
+        selectedFile = null;
+        compressedImageData = null;
+        previewImageSrc = null;
+        errorMessage = null;
+        return IsVisibleChanged.InvokeAsync(IsVisible);
+    }
+}

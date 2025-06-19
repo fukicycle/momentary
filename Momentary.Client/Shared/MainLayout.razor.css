@@ -1,0 +1,75 @@
+/* --- MainLayout.razor のためのスタイル --- */
+
+.page {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+    padding: 0 24px;
+    background-color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    flex-shrink: 0; /* ヘッダーが縮まないようにする */
+    z-index: 100;
+}
+
+.top-bar .title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #3c4043;
+    text-decoration: none;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.profile-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.user-name {
+    font-weight: 500;
+    color: #3c4043;
+    display: none; /* スマホでは名前を非表示 */
+}
+
+/* 画面幅が広いときだけ名前を表示 */
+@media (min-width: 641px) {
+    .user-name {
+        display: inline;
+    }
+}
+
+.logout-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background-color: transparent;
+    border: 1px solid #dadce0;
+    color: #3c4043;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.logout-button:hover {
+    background-color: #f1f3f4;
+}
+
+/* メインコンテンツエリア */
+.content {
+    flex-grow: 1; /* 残りの高さをすべて使う */
+    padding: 1rem;
+    overflow-y: auto; /* コンテンツが多い場合はスクロール */
+}

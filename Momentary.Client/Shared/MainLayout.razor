@@ -4,27 +4,34 @@
 @inject NavigationManager NavManager
 
 <div class="page">
-    <header class="top-bar">
-        @* アプリのタイトル。クリックするとホームに戻る *@
-        <a class="title" href="/">Momentary</a>
-
-        @* 認証されている場合のみ表示されるセクション *@
+    <header class="nav-bar">
         <AuthorizeView>
+            @* 認証されている場合のみ表示されるセクション *@
             <Authorized>
-                <div class="user-profile">
-                    @* Googleアカウントのプロフィール写真 *@
-                    <img src="@context.User.FindFirst("photoUrl")?.Value" alt="Profile" class="profile-avatar" />
+                <div class="nav-content">
+                    @* アプリのタイトル。クリックするとホームに戻る *@
+                    <a class="title" href="/">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path
+                                    d="M23 6C28.0391 6 32.8718 8.00178 36.435 11.565C39.9982 15.1282 42 19.9609 42 25C42 30.0391 39.9982 34.8718 36.435 38.435C32.8718 41.9982 28.0391 44 23 44C17.9609 44 13.1282 41.9982 9.56497 38.435C6.00178 34.8718 4 30.0391 4 25C4 19.9609 6.00178 15.1282 9.56497 11.565C13.1282 8.00178 17.9609 6 23 6ZM23 8C18.4913 8 14.1673 9.79107 10.9792 12.9792C7.79107 16.1673 6 20.4913 6 25C6 29.5087 7.79107 33.8327 10.9792 37.0208C14.1673 40.2089 18.4913 42 23 42C25.2325 42 27.4431 41.5603 29.5056 40.706C31.5682 39.8516 33.4422 38.5994 35.0208 37.0208C36.5994 35.4422 37.8516 33.5682 38.706 31.5056C39.5603 29.4431 40 27.2325 40 25C40 20.4913 38.2089 16.1673 35.0208 12.9792C31.8327 9.79107 27.5087 8 23 8ZM22 14H24V24.84L33.4 30.26L32.4 32L22 26V14Z"
+                                    fill="#3C4043" />
+                            </svg>
+                        </svg>
+                    </a>
 
-                    @* Googleアカウントの表示名 *@
-                    <span class="user-name">@context.User.Identity?.Name</span>
 
                     @* ログアウトボタン *@
-                    <button class="logout-button" @onclick="HandleLogout">
-                        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 0 24 24" width="24px" fill="#5f6368">
-                            <path d="M0 0h24v24H0z" fill="none" />
-                            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z" />
+                    <button class="fab" @onclick="HandleLogout">
+                        @* Googleアカウントのプロフィール写真 *@
+                        <img src="@context.User.FindFirst("photoUrl")?.Value" alt="Profile" class="profile-avatar" />
+                    </button>
+                    <button class="fab" @onclick="() => isDialogVisible = true">
+                        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M14 24H22V16H24V24H32V26H24V34H22V26H14V24ZM23 6C28.0391 6 32.8718 8.00178 36.435 11.565C39.9982 15.1282 42 19.9609 42 25C42 30.0391 39.9982 34.8718 36.435 38.435C32.8718 41.9982 28.0391 44 23 44C17.9609 44 13.1282 41.9982 9.56497 38.435C6.00178 34.8718 4 30.0391 4 25C4 19.9609 6.00178 15.1282 9.56497 11.565C13.1282 8.00178 17.9609 6 23 6ZM23 8C18.4913 8 14.1673 9.79107 10.9792 12.9792C7.79107 16.1673 6 20.4913 6 25C6 29.5087 7.79107 33.8327 10.9792 37.0208C14.1673 40.2089 18.4913 42 23 42C25.2325 42 27.4431 41.5603 29.5056 40.706C31.5682 39.8516 33.4422 38.5994 35.0208 37.0208C36.5994 35.4422 37.8516 33.5682 38.706 31.5056C39.5603 29.4431 40 27.2325 40 25C40 20.4913 38.2089 16.1673 35.0208 12.9792C31.8327 9.79107 27.5087 8 23 8Z"
+                                fill="#3C4043" />
                         </svg>
-                        ログアウト
                     </button>
                 </div>
             </Authorized>
@@ -35,12 +42,21 @@
         @* 各ページの内容がここにレンダリングされる *@
         @Body
     </main>
+    <PostDialog @bind-IsVisible="isDialogVisible" />
 </div>
 
 @code {
+    private bool isDialogVisible = false;
+
     private async Task HandleLogout()
     {
         await AuthService.SignOut();
         NavManager.NavigateTo("");
+    }
+
+    private async Task HandleLogin()
+    {
+        await AuthService.SignInWithGoogle();
+        NavManager.NavigateTo("", forceLoad: true);
     }
 }

@@ -2,7 +2,7 @@ namespace Momentary.Domain.ValueObjects;
 
 public record Photo
 {
-    public const int MAX_SIZE_IN_BYTES = 4096;
+    public const int MAX_SIZE_IN_BYTES = 1024 * 160;
     private const int EXPIRATION_HOURS = 24;
 
     public string Base64Content { get; }

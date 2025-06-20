@@ -97,28 +97,53 @@ window.imageUtils = {
             const reader = new FileReader();
             reader.onload = (event) => {
                 const img = new Image();
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    // 1KB以下にするために解像度をかなり下げる
-                    const size = 100; // 100x100程度に
-                    canvas.width = size;
-                    canvas.height = size;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, size, size);
+                img.onload = async () => {
+                    let maxDimension = 800;
+                    let { width, height } = img;
 
-                    // Jpegで圧縮
-                    canvas.toBlob((blobResult) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            // Uint8Arrayを返す
-                            const byteArray = new Uint8Array(reader.result);
-                            resolve(byteArray);
-                        };
-                        reader.readAsArrayBuffer(blobResult);
-                    }, 'image/jpeg', 0.5); // 品質を下げて圧縮率を上げる
+                    // アスペクト比を維持
+                    if (width > height && width > maxDimension) {
+                        height *= maxDimension / width;
+                        width = maxDimension;
+                    } else if (height > width && height > maxDimension) {
+                        width *= maxDimension / height;
+                        height = maxDimension;
+                    }
+
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.round(width);
+                    canvas.height = Math.round(height);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    let quality = 0.95;
+
+                    const tryCompress = () => {
+                        return new Promise((resolveInner) => {
+                            canvas.toBlob((blobResult) => {
+                                resolveInner(blobResult);
+                            }, 'image/jpeg', quality);
+                        });
+                    };
+
+                    let blobResult;
+                    while (quality >= 0.1) {
+                        blobResult = await tryCompress();
+                        if (blobResult && blobResult.size <= 140 * 1024) break;
+                        quality -= 0.05;
+                    }
+
+                    const finalReader = new FileReader();
+                    finalReader.onloadend = () => {
+                        const byteArray = new Uint8Array(finalReader.result);
+                        resolve(byteArray);
+                    };
+                    finalReader.readAsArrayBuffer(blobResult);
                 };
+                img.onerror = () => reject("画像読み込みに失敗しました");
                 img.src = event.target.result;
             };
+            reader.onerror = () => reject("ファイル読み込みに失敗しました");
             reader.readAsDataURL(blob);
         });
     }

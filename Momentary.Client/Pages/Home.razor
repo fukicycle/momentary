@@ -5,18 +5,15 @@
 <PageTitle>Home</PageTitle>
 <AuthorizeView>
     <NotAuthorized>
-        <h3>ログインが必要です</h3>
-        <button @onclick="SignIn">Googleでログイン</button>
+        <div class="login-wrapper">
+            <button @onclick="SignIn">Continue with Google</button>
+        </div>
     </NotAuthorized>
     <Authorized>
-        <h1>みんなの投稿</h1>
         <PostList />
-        <button class="fab" @onclick="() => isDialogVisible = true">+</button>
-        <PostDialog @bind-IsVisible="isDialogVisible" />
     </Authorized>
 </AuthorizeView>
 @code {
-    private bool isDialogVisible = false;
     private async Task SignIn()
     {
         await AuthService.SignInWithGoogle();

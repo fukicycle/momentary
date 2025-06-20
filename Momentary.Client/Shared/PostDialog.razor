@@ -6,21 +6,31 @@
 {
     <div class="dialog-overlay" @onclick="Close">
         <div class="dialog-content" @onclick:stopPropagation>
-            <h3>写真を投稿 (1KB以下)</h3>
+            <h3>Upload photo</h3>
             <InputFile OnChange="HandleFileSelected" />
-            
-            @if(previewImageSrc != null)
+
+            @if (previewImageSrc != null)
             {
                 <img src="@previewImageSrc" style="width:100px; height:100px; object-fit:cover; margin-top: 10px;" />
             }
-            
-            @if (errorMessage != null) { <p class="error-message">@errorMessage</p> }
+
+            @if (errorMessage != null)
+            {
+                <p class="error-message">@errorMessage</p>
+            }
 
             <div class="dialog-actions">
                 <button @onclick="SubmitPost" disabled="@isSubmitting">
-                    @if(isSubmitting) { <span>投稿中...</span> } else { <span>投稿</span> }
+                    @if (isSubmitting)
+                    {
+                        <span>Uploading...</span>
+                    }
+                    else
+                    {
+                        <span>Upload</span>
+                    }
                 </button>
-                <button @onclick="Close">キャンセル</button>
+                <button @onclick="Close">Cancel</button>
             </div>
         </div>
     </div>
@@ -29,7 +39,7 @@
 @code {
     [Parameter] public bool IsVisible { get; set; }
     [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
-    
+
     private IBrowserFile? selectedFile;
     private byte[]? compressedImageData;
     private string? previewImageSrc;
@@ -43,7 +53,7 @@
         previewImageSrc = null;
 
         if (selectedFile == null) return;
-        
+
         try
         {
             // JSで画像を圧縮
@@ -53,11 +63,11 @@
 
             if (compressedImageData.Length > Photo.MAX_SIZE_IN_BYTES)
             {
-                 errorMessage = $"圧縮後もサイズオーバーです: {compressedImageData.Length} bytes";
-                 compressedImageData = null;
-                 return;
+                errorMessage = $"圧縮後もサイズオーバーです: {compressedImageData.Length} bytes";
+                compressedImageData = null;
+                return;
             }
-            
+
             previewImageSrc = $"data:image/jpeg;base64,{Convert.ToBase64String(compressedImageData)}";
         }
         catch (Exception ex)
@@ -88,11 +98,11 @@
             }
 
             var command = new CreatePostCommand(
-                user.FindFirst(ClaimTypes.NameIdentifier)!.Value,
-                user.Identity.Name!,
-                user.FindFirst("photoUrl")!.Value,
-                compressedImageData,
-                selectedFile.LastModified.UtcDateTime
+            user.FindFirst(ClaimTypes.NameIdentifier)!.Value,
+            user.Identity.Name!,
+            user.FindFirst("photoUrl")!.Value,
+            compressedImageData,
+            selectedFile.LastModified.UtcDateTime
             );
 
             await PostService.CreatePostAsync(command);
